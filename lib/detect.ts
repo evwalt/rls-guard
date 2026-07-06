@@ -44,6 +44,18 @@ function looksUnrestricted(qual: string | null): boolean {
   return normalized === "true" || normalized === "(true)";
 }
 
+// `qual` (USING) only governs SELECT/UPDATE/DELETE/ALL; `with_check` (WITH
+// CHECK) only governs INSERT/UPDATE/ALL. Postgres leaves the inapplicable
+// column null (e.g. a SELECT policy always has with_check = null) — that
+// null must not be read as "no restriction," or every correctly-scoped
+// single-purpose policy gets flagged as wide open.
+function qualApplies(cmd: string): boolean {
+  return cmd === "ALL" || cmd === "SELECT" || cmd === "UPDATE" || cmd === "DELETE";
+}
+function withCheckApplies(cmd: string): boolean {
+  return cmd === "ALL" || cmd === "INSERT" || cmd === "UPDATE";
+}
+
 function guessOwnershipColumn(columns: string[]): string | null {
   const lower = columns.map((c) => c.toLowerCase());
   for (const pattern of OWNERSHIP_COLUMN_PATTERNS) {
@@ -89,10 +101,19 @@ export function detect(scan: TableScan[]): Finding[] {
     }
 
     for (const policy of table.policies) {
+      // RESTRICTIVE policies can only narrow access (ANDed with permissive
+      // policies) — they never grant it on their own, so one can never be
+      // the thing that makes a table "unrestricted."
+      if (policy.permissive === "RESTRICTIVE") continue;
+
       const openRoles = policy.roles.filter((r) => OPEN_ROLES.has(r));
       if (openRoles.length === 0) continue;
 
-      if (looksUnrestricted(policy.qual) || looksUnrestricted(policy.with_check)) {
+      const qualOpen = qualApplies(policy.cmd) && looksUnrestricted(policy.qual);
+      const withCheckOpen =
+        withCheckApplies(policy.cmd) && looksUnrestricted(policy.with_check);
+
+      if (qualOpen || withCheckOpen) {
         const ownershipCol = guessOwnershipColumn(table.columns);
         const suggestion = ownershipCol
           ? `auth.uid() = ${ownershipCol}`

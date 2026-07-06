@@ -2,3 +2,5 @@ node_modules/
 .next/
 .env.local
 *.log
+verification/pgdata/
+verification/sockets/
