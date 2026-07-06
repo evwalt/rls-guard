@@ -23,17 +23,19 @@ idea [003](../founder-os/pipeline/02-validating/003-ai-app-vuln-autofix/).
 
 ## Status
 
-Built and self-tested 2026-07-04. `npm test` runs 6 unit tests against
-hand-written fixtures (not a real project). `npx next build` compiles
-clean.
+Built 2026-07-04. `npm test` runs 9 unit tests, `npx next build` compiles
+clean. Detection logic verified 2026-07-06 against a real Postgres
+instance (see `verification/README.md`) — this run found and fixed two
+real false-positive bugs that the original fixture-only tests had missed.
 
 ## Before this can take real money
 
-1. **Verify detection against a real Supabase project**, not just
-   fixtures — create a free/disposable test project, deliberately
-   misconfigure a table's RLS, run the scan query, paste the output in
-   locally (`npm run dev`), and confirm the report is accurate. Do this
-   before anything below.
+1. ~~Verify detection against a real Supabase project~~ — done 2026-07-06
+   against a disposable local Postgres cluster mirroring Supabase's
+   catalogs (see `verification/README.md` for exactly what that does and
+   doesn't cover). The one still-open piece: a real hosted Supabase
+   project, mainly to check Studio's SQL Editor copy-paste behavior on a
+   large result — smaller risk now, but not zero.
 2. Create a Stripe account, add a one-time Price (~$12) and a recurring
    monthly Price (~$19), and fill in `.env.local` (see `.env.example`).
    Test in Stripe test mode before switching to live keys.
