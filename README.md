@@ -36,11 +36,13 @@ real false-positive bugs that the original fixture-only tests had missed.
    doesn't cover). The one still-open piece: a real hosted Supabase
    project, mainly to check Studio's SQL Editor copy-paste behavior on a
    large result — smaller risk now, but not zero.
-2. Create a Stripe account, add a one-time Price (~$12) and a recurring
-   monthly Price (~$19), and fill in `.env.local` (see `.env.example`).
-   Test in Stripe test mode before switching to live keys.
-3. Deploy (Vercel is the least-friction choice for a Next.js app). Pick a
-   name/domain — "RLS Guard" is a placeholder, not a final decision.
+2. ~~Create a Stripe account and a one-time Price (~$12)~~ — done. No
+   subscription offering at this time — one-time purchase only, to keep
+   the first market test as small as possible. Test in Stripe test mode
+   before switching to live keys.
+3. ~~Deploy (Vercel)~~ — done, connected to the GitHub repo for
+   auto-deploy on push. Pick a name/domain — "RLS Guard" is a placeholder,
+   not a final decision.
 4. Write/approve the actual launch post copy and decide where and when to
    post (see the validation plan's distribution section) — nothing here
    should be posted publicly without that review.

@@ -11,7 +11,7 @@ export default function Page() {
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState<"one_time" | "subscription" | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [copiedQuery, setCopiedQuery] = useState(false);
 
   // Round-trip through Stripe Checkout leaves this page and comes back.
@@ -55,18 +55,18 @@ export default function Page() {
     }
   }
 
-  async function handleUnlock(plan: "one_time" | "subscription") {
-    setCheckoutLoading(plan);
+  async function handleUnlock() {
+    setCheckoutLoading(true);
     try {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, origin: window.location.origin }),
+        body: JSON.stringify({ origin: window.location.origin }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } finally {
-      setCheckoutLoading(null);
+      setCheckoutLoading(false);
     }
   }
 
@@ -173,26 +173,12 @@ export default function Page() {
                 each one.
               </p>
               <button
-                onClick={() => handleUnlock("one_time")}
-                disabled={checkoutLoading !== null}
-                style={{ ...buttonStyle, marginRight: 12 }}
-              >
-                {checkoutLoading === "one_time" ? "Redirecting…" : "Unlock this report — $12 one-time"}
-              </button>
-              <button
-                onClick={() => handleUnlock("subscription")}
-                disabled={checkoutLoading !== null}
+                onClick={handleUnlock}
+                disabled={checkoutLoading}
                 style={primaryButtonStyle}
               >
-                {checkoutLoading === "subscription"
-                  ? "Redirecting…"
-                  : "Unlock + rescan anytime — $19/mo"}
+                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard — $12 one-time"}
               </button>
-              <p style={{ color: "#9aa7b0", fontSize: 13, marginTop: 12 }}>
-                Your AI tool keeps shipping new code every time you prompt it
-                — the subscription is for rechecking after every session, not
-                just once.
-              </p>
             </div>
           )}
 
