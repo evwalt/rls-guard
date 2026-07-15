@@ -36,7 +36,7 @@ real false-positive bugs that the original fixture-only tests had missed.
    doesn't cover). The one still-open piece: a real hosted Supabase
    project, mainly to check Studio's SQL Editor copy-paste behavior on a
    large result — smaller risk now, but not zero.
-2. ~~Create a Stripe account and a one-time Price (~$12)~~ — done. No
+2. ~~Create a Stripe account and a one-time Price (~$29)~~ — done. No
    subscription offering at this time — one-time purchase only, to keep
    the first market test as small as possible. Test in Stripe test mode
    before switching to live keys.
