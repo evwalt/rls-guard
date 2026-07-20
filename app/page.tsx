@@ -81,13 +81,15 @@ export default function Page() {
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px 96px" }}>
       <h1 style={{ fontSize: 32, lineHeight: 1.25 }}>
-        Does your Supabase app let other users read each other&apos;s data?
+        RLS Guard: check whether your Supabase app leaks other users&apos; data
       </h1>
       <p style={{ color: "#9aa7b0", fontSize: 17 }}>
-        91.5% of AI-generated ("vibe-coded") apps shipped with at least one
-        vulnerability in Q1 2026: missing Row-Level-Security is the single
-        most common one. Check yours in about a minute. We never see your
-        connection string, and the scan never leaves your browser.
+        A free, read-only check for the most common Supabase mistake:
+        missing or misconfigured Row-Level Security, especially common in
+        AI-assisted ("vibe-coded") apps. Run one short, auditable{" "}
+        <code>select</code> query in your own Supabase SQL Editor and paste
+        the result back here. We never see a connection string, and nothing
+        you paste leaves your browser.
       </p>
 
       <section style={{ marginTop: 40 }}>
@@ -177,7 +179,7 @@ export default function Page() {
                 disabled={checkoutLoading}
                 style={primaryButtonStyle}
               >
-                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard: $29 one-time"}
+                {checkoutLoading ? "Redirecting…" : "Unlock the fix: $29 one-time"}
               </button>
             </div>
           )}
