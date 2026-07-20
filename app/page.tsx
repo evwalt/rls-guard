@@ -84,12 +84,13 @@ export default function Page() {
         RLS Guard: check whether your Supabase app leaks other users&apos; data
       </h1>
       <p style={{ color: "#9aa7b0", fontSize: 17 }}>
-        A free, read-only check for the most common Supabase mistake:
-        missing or misconfigured Row-Level Security, especially common in
-        AI-assisted ("vibe-coded") apps. Run one short, auditable{" "}
+        A read-only Supabase RLS scan that shows whether your app may be
+        exposing other users&apos; data, especially common in AI-assisted
+        ("vibe-coded") apps. Run one short, auditable{" "}
         <code>select</code> query in your own Supabase SQL Editor and paste
-        the result back here. We never see a connection string, and nothing
-        you paste leaves your browser.
+        the result here. The scan is free; detailed findings and exact
+        remediation SQL are available for a one-time $29 payment. We never
+        see a connection string, and nothing you paste leaves your browser.
       </p>
 
       <section style={{ marginTop: 40 }}>
@@ -171,8 +172,8 @@ export default function Page() {
               }}
             >
               <p>
-                Unlock which tables are affected and the exact SQL to fix
-                each one.
+                Unlock the affected tables, policy details, and exact SQL to
+                fix each issue for $29 one-time.
               </p>
               <button
                 onClick={handleUnlock}
