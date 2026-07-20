@@ -177,7 +177,7 @@ export default function Page() {
                 disabled={checkoutLoading}
                 style={primaryButtonStyle}
               >
-                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard — $12 one-time"}
+                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard — $29 one-time"}
               </button>
             </div>
           )}
