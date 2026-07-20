@@ -85,16 +85,16 @@ export default function Page() {
       </h1>
       <p style={{ color: "#9aa7b0", fontSize: 17 }}>
         91.5% of AI-generated ("vibe-coded") apps shipped with at least one
-        vulnerability in Q1 2026 — missing Row-Level-Security is the single
+        vulnerability in Q1 2026: missing Row-Level-Security is the single
         most common one. Check yours in about a minute. We never see your
         connection string, and the scan never leaves your browser.
       </p>
 
       <section style={{ marginTop: 40 }}>
-        <h2 style={{ fontSize: 20 }}>Step 1 — run this in your Supabase SQL Editor</h2>
+        <h2 style={{ fontSize: 20 }}>Step 1: run this in your Supabase SQL Editor</h2>
         <p style={{ color: "#9aa7b0" }}>
           It&apos;s a read-only <code>select</code> against Postgres&apos;s own system
-          catalogs — nothing here can modify your database. Read it before you
+          catalogs; nothing here can modify your database. Read it before you
           run it.
         </p>
         <pre
@@ -114,7 +114,7 @@ export default function Page() {
       </section>
 
       <section style={{ marginTop: 40 }}>
-        <h2 style={{ fontSize: 20 }}>Step 2 — paste the result back here</h2>
+        <h2 style={{ fontSize: 20 }}>Step 2: paste the result back here</h2>
         <p style={{ color: "#9aa7b0" }}>
           Click the single <code>scan_result</code> cell in the SQL Editor&apos;s
           output and paste its full value below.
@@ -147,7 +147,7 @@ export default function Page() {
         <section id="results" style={{ marginTop: 40 }}>
           <h2 style={{ fontSize: 20 }}>Results</h2>
           <p>
-            <strong>{summary.total}</strong> issue{summary.total === 1 ? "" : "s"} found —{" "}
+            <strong>{summary.total}</strong> issue{summary.total === 1 ? "" : "s"} found:{" "}
             {summary.high} that could expose or corrupt other users&apos; data,{" "}
             {summary.info} configuration warning{summary.info === 1 ? "" : "s"}.
           </p>
@@ -155,7 +155,7 @@ export default function Page() {
           {summary.total === 0 && (
             <p style={{ color: "#3fb950" }}>
               No RLS issues found in this scan class. (This checks one
-              vulnerability class only — it is not a full security audit.)
+              vulnerability class only; it is not a full security audit.)
             </p>
           )}
 
@@ -177,7 +177,7 @@ export default function Page() {
                 disabled={checkoutLoading}
                 style={primaryButtonStyle}
               >
-                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard — $29 one-time"}
+                {checkoutLoading ? "Redirecting…" : "Buy RLS Guard: $29 one-time"}
               </button>
             </div>
           )}
@@ -196,7 +196,7 @@ export default function Page() {
                 >
                   <p style={{ fontWeight: 600 }}>
                     {f.severity === "high" ? "⚠️ " : "ℹ️ "}
-                    {f.table} — {f.title}
+                    {f.table}: {f.title}
                   </p>
                   <p style={{ color: "#9aa7b0" }}>{f.detail}</p>
                   <pre
@@ -220,7 +220,7 @@ export default function Page() {
       <footer style={{ marginTop: 64, color: "#6e7681", fontSize: 13 }}>
         Checks one vulnerability class (Postgres/Supabase Row-Level-Security
         misconfiguration) against metadata you paste in yourself. Not a full
-        security audit. Nothing you paste is sent to our server — analysis
+        security audit. Nothing you paste is sent to our server: analysis
         runs in your browser.
       </footer>
     </main>

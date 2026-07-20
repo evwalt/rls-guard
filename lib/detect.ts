@@ -117,7 +117,7 @@ export function detect(scan: TableScan[]): Finding[] {
         const ownershipCol = guessOwnershipColumn(table.columns);
         const suggestion = ownershipCol
           ? `auth.uid() = ${ownershipCol}`
-          : `/* replace with an actual ownership condition — no obvious owner column found */`;
+          : `/* replace with an actual ownership condition: no obvious owner column found */`;
 
         // Postgres rejects USING on a FOR INSERT policy and rejects WITH
         // CHECK on FOR SELECT/DELETE policies — only emit the clauses that
