@@ -47,6 +47,13 @@ test("flags a permissive USING (true) policy open to anon", () => {
   assert.equal(findings.length, 1);
   assert.equal(findings[0].severity, "high");
   assert.match(findings[0].detail, /anon, authenticated/);
+  // A SELECT-only policy cannot legally carry a WITH CHECK clause in
+  // Postgres — the fix must not suggest one, or it fails to run.
+  assert.doesNotMatch(findings[0].fixSql, /with check/i);
+  assert.match(findings[0].fixSql, /using \(auth\.uid\(\) = author_id\)/);
+  // The fix must preserve the original TO roles rather than defaulting to
+  // PUBLIC, which would widen who the policy applies to.
+  assert.match(findings[0].fixSql, /to anon, authenticated/);
 });
 
 test("does not flag a properly scoped policy", () => {
@@ -195,6 +202,41 @@ test("flags an INSERT-only policy open via WITH CHECK (qual is null but inapplic
   const findings = detect(scan);
   assert.equal(findings.length, 1);
   assert.equal(findings[0].severity, "high");
+  // An INSERT-only policy cannot legally carry a USING clause in Postgres
+  // (only WITH CHECK applies) — the fix must not suggest one, or it fails
+  // to run with "only WITH CHECK expression allowed for INSERT".
+  assert.doesNotMatch(findings[0].fixSql, /using \(/i);
+  assert.match(findings[0].fixSql, /with check \(auth\.uid\(\) = created_by\)/);
+  assert.match(findings[0].fixSql, /to public/);
+});
+
+test("flags an overly permissive DELETE policy without suggesting an invalid WITH CHECK clause", () => {
+  // DELETE-only policies, like SELECT-only, cannot carry WITH CHECK in
+  // Postgres. Not covered by the SELECT test above since it exercises a
+  // different qualApplies() branch.
+  const scan: TableScan[] = [
+    {
+      schemaname: "public",
+      tablename: "tickets",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "tickets_open_delete",
+          permissive: "PERMISSIVE",
+          roles: ["authenticated"],
+          cmd: "DELETE",
+          qual: "true",
+          with_check: null,
+        },
+      ],
+      columns: ["id", "owner_id"],
+    },
+  ];
+  const findings = detect(scan);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].severity, "high");
+  assert.doesNotMatch(findings[0].fixSql, /with check/i);
+  assert.match(findings[0].fixSql, /using \(auth\.uid\(\) = owner_id\)/);
 });
 
 test("summarize counts severities correctly", () => {

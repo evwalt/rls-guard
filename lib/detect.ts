@@ -119,12 +119,20 @@ export function detect(scan: TableScan[]): Finding[] {
           ? `auth.uid() = ${ownershipCol}`
           : `/* replace with an actual ownership condition — no obvious owner column found */`;
 
+        // Postgres rejects USING on a FOR INSERT policy and rejects WITH
+        // CHECK on FOR SELECT/DELETE policies — only emit the clauses that
+        // are valid for this policy's command, same rule qualApplies /
+        // withCheckApplies already encode for detection.
+        const clauses: string[] = [];
+        if (qualApplies(policy.cmd)) clauses.push(`  using (${suggestion})`);
+        if (withCheckApplies(policy.cmd)) clauses.push(`  with check (${suggestion})`);
+
         findings.push({
           table: qualifiedName,
           severity: "high",
           title: `Policy "${policy.policyname}" allows unrestricted access`,
           detail: `Role(s) ${openRoles.join(", ")} can ${policy.cmd} every row in this table with no restriction (USING/WITH CHECK evaluates to true).`,
-          fixSql: `drop policy "${policy.policyname}" on ${qualifiedName};\n\ncreate policy "${policy.policyname}" on ${qualifiedName}\n  for ${policy.cmd.toLowerCase()}\n  using (${suggestion})\n  with check (${suggestion});`,
+          fixSql: `drop policy "${policy.policyname}" on ${qualifiedName};\n\ncreate policy "${policy.policyname}" on ${qualifiedName}\n  for ${policy.cmd.toLowerCase()}\n  to ${policy.roles.join(", ")}\n${clauses.join("\n")};`,
         });
       }
     }
