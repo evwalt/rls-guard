@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 
 const siteUrl = "https://rls-guard.evanwalter.dev";
-const title = "RLS Guard: check your Supabase app for the #1 vibe-coding data leak";
+const title = "RLS Guard: Supabase Row-Level Security Scanner";
 const description =
-  "Paste one read-only query's output from your own Supabase SQL Editor. Find out in seconds whether other users can read or write your data.";
+  "Free tool that scans your Supabase project for missing or misconfigured Row-Level Security (RLS) policies. Runs entirely in your browser, no credentials needed.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

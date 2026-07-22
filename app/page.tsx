@@ -25,6 +25,43 @@ function formatDuration(ms: number): string {
   return `${Math.round(ms)} ms`;
 }
 
+// Shared source for both the visible FAQ section and its JSON-LD, so the
+// two can't drift apart. Every answer restates a claim already made
+// elsewhere on the page (hero, footer, paywall copy) rather than
+// introducing new claims.
+const faqs: { question: string; answer: string }[] = [
+  {
+    question: "What does RLS Guard check?",
+    answer:
+      "It scans your Supabase (PostgreSQL) project's Row-Level Security policies for the most common misconfigurations: RLS disabled entirely, RLS enabled with no policies, and policies that unintentionally leave anon, authenticated, or public roles with unrestricted access.",
+  },
+  {
+    question: "Does RLS Guard see my database or credentials?",
+    answer:
+      "No. You run one read-only SQL query yourself in the Supabase SQL Editor and paste the JSON result here. RLS Guard never asks for a connection string, and analysis runs entirely in your browser.",
+  },
+  {
+    question: "Is this a full security audit?",
+    answer:
+      "No. RLS Guard checks one vulnerability class: Row-Level Security misconfiguration. It's a fast first check, not a substitute for a full security review.",
+  },
+  {
+    question: "What's included in the paid report?",
+    answer:
+      "Affected table names, policy names, an explanation of each issue, and the exact SQL to fix it, ready for you to review and run yourself.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: { "@type": "Answer", text: f.answer },
+  })),
+};
+
 export default function Page() {
   const [pasteInput, setPasteInput] = useState("");
   const [findings, setFindings] = useState<Finding[] | null>(null);
@@ -113,16 +150,18 @@ export default function Page() {
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px 96px" }}>
       <h1 style={{ fontSize: 32, lineHeight: 1.25 }}>
-        RLS Guard: check whether your Supabase app leaks other users&apos; data
+        RLS Guard: check whether your Supabase Row-Level Security is
+        exposing other users&apos; data
       </h1>
       <p style={{ color: "#9aa7b0", fontSize: 17 }}>
-        A read-only Supabase RLS scan that shows whether your app may be
-        exposing other users&apos; data, especially common in AI-assisted
-        ("vibe-coded") apps. Run one short, auditable{" "}
-        <code>select</code> query in your own Supabase SQL Editor and paste
-        the result here. The scan is free; detailed findings and exact
-        remediation SQL are available for a one-time $29 payment. We never
-        see a connection string, and nothing you paste leaves your browser.
+        A read-only scanner that checks your Supabase (PostgreSQL) project
+        for missing or misconfigured Row-Level Security policies, the RLS
+        gap most common in AI-assisted ("vibe-coded") apps. Run one short,
+        auditable <code>select</code> query in your own Supabase SQL Editor
+        and paste the result here. The scan is free; detailed findings and
+        exact remediation SQL are available for a one-time $29 payment. We
+        never see a connection string, and nothing you paste leaves your
+        browser.
       </p>
 
       <section style={{ marginTop: 40 }}>
@@ -279,11 +318,26 @@ export default function Page() {
         </section>
       )}
 
+      <section style={{ marginTop: 40 }}>
+        <h2 style={{ fontSize: 20 }}>FAQ</h2>
+        {faqs.map((f) => (
+          <div key={f.question} style={{ marginTop: 16 }}>
+            <p style={{ fontWeight: 600 }}>{f.question}</p>
+            <p style={{ color: "#9aa7b0" }}>{f.answer}</p>
+          </div>
+        ))}
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
       <footer style={{ marginTop: 64, color: "#6e7681", fontSize: 13 }}>
-        Checks one vulnerability class (Postgres/Supabase Row-Level-Security
-        misconfiguration) against metadata you paste in yourself. Not a full
-        security audit. Nothing you paste is sent to our server: analysis
-        runs in your browser.
+        Checks one vulnerability class: PostgreSQL Row-Level Security (RLS)
+        misconfiguration in a Supabase project, based on metadata you paste
+        in yourself. Not a full security audit. Nothing you paste is sent to
+        our server: analysis runs in your browser.
       </footer>
     </main>
   );
