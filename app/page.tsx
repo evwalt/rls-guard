@@ -9,6 +9,7 @@ import {
   type TableScan,
   type Finding,
 } from "@/lib/detect";
+import { normalizeScanInput } from "@/lib/normalize-scan-input";
 import { SCAN_QUERY } from "@/lib/scan-query";
 
 const STORAGE_KEY = "rls-guard-scan-v1";
@@ -73,13 +74,14 @@ export default function Page() {
   function handleAnalyze() {
     setParseError(null);
     try {
-      const scan: TableScan[] = JSON.parse(pasteInput);
-      if (!Array.isArray(scan)) throw new Error("Expected a JSON array");
+      const parsed = JSON.parse(pasteInput);
+      const scan = normalizeScanInput(parsed);
+      if (!Array.isArray(scan)) throw new Error("Unrecognized scan shape");
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(scan));
-      runScan(scan);
+      runScan(scan as TableScan[]);
     } catch (e) {
       setParseError(
-        "That didn't parse as the expected JSON. Make sure you copied the full value of the scan_result cell from the SQL Editor."
+        "We couldn't recognize this Supabase result. Copy the full result from the SQL Editor and paste it here without editing it."
       );
     }
   }
@@ -149,8 +151,7 @@ export default function Page() {
       <section style={{ marginTop: 40 }}>
         <h2 style={{ fontSize: 20 }}>Step 2: paste the result back here</h2>
         <p style={{ color: "#9aa7b0" }}>
-          Click the single <code>scan_result</code> cell in the SQL Editor&apos;s
-          output and paste its full value below.
+          Copy the result from Supabase and paste it here as-is.
         </p>
         <textarea
           value={pasteInput}
@@ -159,6 +160,7 @@ export default function Page() {
           rows={8}
           style={{
             width: "100%",
+            boxSizing: "border-box",
             background: "#161b22",
             color: "#e6edf3",
             border: "1px solid #30363d",
