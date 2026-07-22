@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detect, summarize, type TableScan } from "./detect.ts";
+import { detect, summarize, categorizeFindings, scanMeta, type TableScan } from "./detect.ts";
 
 // These fixtures are hand-written to mimic the shape of the JSON produced by
 // the scan query in README.md, not pulled from a real project. Verifying
@@ -249,4 +249,131 @@ test("summarize counts severities correctly", () => {
   assert.equal(summary.total, 2);
   assert.equal(summary.high, 1);
   assert.equal(summary.info, 1);
+});
+
+test("categorizeFindings groups by category without leaking table or policy names", () => {
+  const scan: TableScan[] = [
+    { schemaname: "public", tablename: "orders", rls_enabled: false, policies: [], columns: [] },
+    {
+      schemaname: "public",
+      tablename: "messages",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "allow_all",
+          permissive: "PERMISSIVE",
+          roles: ["anon"],
+          cmd: "SELECT",
+          qual: "true",
+          with_check: null,
+        },
+      ],
+      columns: [],
+    },
+  ];
+  const findings = detect(scan);
+  const categories = categorizeFindings(findings);
+
+  assert.equal(categories.length, 2);
+  assert.equal(categories[0].text, "1 table has RLS disabled");
+  assert.equal(categories[1].text, "1 SELECT policy is overly permissive");
+
+  const serialized = JSON.stringify(categories);
+  assert.doesNotMatch(serialized, /orders|messages|allow_all/);
+});
+
+test("categorizeFindings pluralizes and groups multiple permissive policies by command", () => {
+  const scan: TableScan[] = [
+    {
+      schemaname: "public",
+      tablename: "a",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "p1",
+          permissive: "PERMISSIVE",
+          roles: ["anon"],
+          cmd: "SELECT",
+          qual: "true",
+          with_check: null,
+        },
+      ],
+      columns: [],
+    },
+    {
+      schemaname: "public",
+      tablename: "b",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "p2",
+          permissive: "PERMISSIVE",
+          roles: ["anon"],
+          cmd: "SELECT",
+          qual: "true",
+          with_check: null,
+        },
+      ],
+      columns: [],
+    },
+    {
+      schemaname: "public",
+      tablename: "c",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "p3",
+          permissive: "PERMISSIVE",
+          roles: ["public"],
+          cmd: "INSERT",
+          qual: null,
+          with_check: "true",
+        },
+      ],
+      columns: [],
+    },
+  ];
+  const findings = detect(scan);
+  const categories = categorizeFindings(findings);
+
+  assert.equal(categories.length, 2);
+  assert.equal(categories[0].text, "2 SELECT policies are overly permissive");
+  assert.equal(categories[1].text, "1 INSERT policy is overly permissive");
+});
+
+test("categorizeFindings pluralizes the no-policies category", () => {
+  const scan: TableScan[] = [
+    { schemaname: "public", tablename: "a", rls_enabled: true, policies: [], columns: [] },
+    { schemaname: "public", tablename: "b", rls_enabled: true, policies: [], columns: [] },
+  ];
+  const findings = detect(scan);
+  const categories = categorizeFindings(findings);
+
+  assert.equal(categories.length, 1);
+  assert.equal(categories[0].text, "2 tables have RLS enabled but have no policies");
+});
+
+test("scanMeta counts tables and policies from the raw scan, independent of findings", () => {
+  const scan: TableScan[] = [
+    {
+      schemaname: "public",
+      tablename: "a",
+      rls_enabled: true,
+      policies: [
+        {
+          policyname: "owner_only",
+          permissive: "PERMISSIVE",
+          roles: ["authenticated"],
+          cmd: "ALL",
+          qual: "(auth.uid() = user_id)",
+          with_check: "(auth.uid() = user_id)",
+        },
+      ],
+      columns: ["id", "user_id"],
+    },
+    { schemaname: "public", tablename: "b", rls_enabled: true, policies: [], columns: [] },
+  ];
+  const meta = scanMeta(scan);
+  assert.equal(meta.tablesScanned, 2);
+  assert.equal(meta.policiesAnalyzed, 1);
 });

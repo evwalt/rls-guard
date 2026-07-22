@@ -1,18 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { detect, summarize, type TableScan, type Finding } from "@/lib/detect";
+import {
+  detect,
+  summarize,
+  categorizeFindings,
+  scanMeta,
+  type TableScan,
+  type Finding,
+} from "@/lib/detect";
 import { SCAN_QUERY } from "@/lib/scan-query";
 
 const STORAGE_KEY = "rls-guard-scan-v1";
 
+type Meta = {
+  tablesScanned: number;
+  policiesAnalyzed: number;
+  durationMs: number;
+};
+
+function formatDuration(ms: number): string {
+  if (ms < 1) return "<1 ms";
+  return `${Math.round(ms)} ms`;
+}
+
 export default function Page() {
   const [pasteInput, setPasteInput] = useState("");
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [meta, setMeta] = useState<Meta | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [copiedQuery, setCopiedQuery] = useState(false);
+
+  // Timed so the results page can show real scan duration as evidence that
+  // analysis actually ran against the pasted metadata, not a canned number.
+  function runScan(scan: TableScan[]) {
+    const start = performance.now();
+    const detected = detect(scan);
+    const durationMs = performance.now() - start;
+    setFindings(detected);
+    setMeta({ ...scanMeta(scan), durationMs });
+  }
 
   // Round-trip through Stripe Checkout leaves this page and comes back.
   // The scan itself never touches our server — we stash it in
@@ -23,7 +52,7 @@ export default function Page() {
     if (saved) {
       try {
         const scan: TableScan[] = JSON.parse(saved);
-        setFindings(detect(scan));
+        runScan(scan);
       } catch {
         // ignore corrupt cache
       }
@@ -47,7 +76,7 @@ export default function Page() {
       const scan: TableScan[] = JSON.parse(pasteInput);
       if (!Array.isArray(scan)) throw new Error("Expected a JSON array");
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(scan));
-      setFindings(detect(scan));
+      runScan(scan);
     } catch (e) {
       setParseError(
         "That didn't parse as the expected JSON. Make sure you copied the full value of the scan_result cell from the SQL Editor."
@@ -77,6 +106,7 @@ export default function Page() {
   }
 
   const summary = findings ? summarize(findings) : null;
+  const categories = findings ? categorizeFindings(findings) : [];
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px 96px" }}>
@@ -149,14 +179,37 @@ export default function Page() {
       {summary && (
         <section id="results" style={{ marginTop: 40 }}>
           <h2 style={{ fontSize: 20 }}>Results</h2>
-          <p>
-            <strong>{summary.total}</strong> issue{summary.total === 1 ? "" : "s"} found:{" "}
-            {summary.high} that could expose or corrupt other users&apos; data,{" "}
-            {summary.info} configuration warning{summary.info === 1 ? "" : "s"}.
+
+          <p style={{ fontWeight: 600 }}>
+            {summary.total} finding{summary.total === 1 ? "" : "s"} detected
+          </p>
+
+          {summary.total > 0 && (
+            <ul style={{ listStyle: "none", padding: 0, margin: "8px 0 0" }}>
+              {categories.map((c) => (
+                <li key={c.text} style={{ color: "#9aa7b0" }}>
+                  ✓ {c.text}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {meta && (
+            <p style={{ color: "#6e7681", fontSize: 14, marginTop: 12 }}>
+              Scanned {meta.tablesScanned} table{meta.tablesScanned === 1 ? "" : "s"} •{" "}
+              {meta.policiesAnalyzed} polic{meta.policiesAnalyzed === 1 ? "y" : "ies"} •{" "}
+              {summary.total} finding{summary.total === 1 ? "" : "s"} •{" "}
+              {formatDuration(meta.durationMs)}
+            </p>
+          )}
+
+          <p style={{ color: "#6e7681", fontSize: 13, marginTop: 8 }}>
+            Analysis is performed entirely in your browser. Your metadata is
+            never uploaded.
           </p>
 
           {summary.total === 0 && (
-            <p style={{ color: "#3fb950" }}>
+            <p style={{ color: "#3fb950", marginTop: 16 }}>
               No RLS issues found in this scan class. (This checks one
               vulnerability class only; it is not a full security audit.)
             </p>
@@ -171,10 +224,14 @@ export default function Page() {
                 marginTop: 16,
               }}
             >
-              <p>
-                Unlock the affected tables, policy details, and exact SQL to
-                fix each issue for $29 one-time.
-              </p>
+              <p style={{ fontWeight: 600 }}>Unlock the full report:</p>
+              <ul style={{ margin: "8px 0", paddingLeft: 20, color: "#9aa7b0" }}>
+                <li>Affected table names</li>
+                <li>Policy names</li>
+                <li>Severity explanations</li>
+                <li>Exact remediation SQL</li>
+                <li>Copyable SQL fixes</li>
+              </ul>
               <button
                 onClick={handleUnlock}
                 disabled={checkoutLoading}
