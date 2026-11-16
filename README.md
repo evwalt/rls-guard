@@ -1,57 +1,53 @@
-# RLS Guard (working name)
+# RLS Guard
 
-Checks a Supabase/Postgres project for the most common "vibe coding"
-security mistake — missing or overly permissive Row-Level-Security — and
-generates the exact fix SQL. Built as the validation MVP for founder-os
-idea [003](../founder-os/pipeline/02-validating/003-ai-app-vuln-autofix/).
+A developer security tool that audits Supabase/Postgres projects for broken
+access control (missing or misconfigured Row-Level Security) and generates
+ready-to-run remediation SQL.
 
-## Why this design
+Live: [rls-guard.evanwalter.dev](https://rls-guard.evanwalter.dev)
 
-- **We never see a database credential.** The user runs one short,
-  plainly-readable `select` query (`lib/scan-query.ts`) in their own
-  Supabase SQL Editor — a tool they already trust — and pastes the JSON
-  result back into this page. There is no connection-string field
-  anywhere in this product.
+## The problem
+
+Row-Level Security (RLS) is how Postgres enforces "a user can only see their own
+rows." When it is turned off, or left wide open with an overly permissive
+policy, every tenant can read every other tenant's data. This is broken access
+control (OWASP A01), and it is easy to miss because the application still works.
+It is one of the most common security mistakes in quickly-built Supabase apps.
+
+## How it works
+
+1. You run one short, readable `SELECT` (`lib/scan-query.ts`) in your own
+   Supabase SQL Editor, a tool you already trust.
+2. You paste the JSON result back into the page.
+3. RLS Guard flags the tables with missing or permissive policies and generates
+   the exact remediation SQL for you to review and run.
+
+## Security by design
+
+- **No database credentials are ever handled.** There is no connection-string
+  field anywhere in the product. You run the read-only scan query yourself.
 - **Detection runs entirely in the browser.** `lib/detect.ts` is a pure
-  function; `app/page.tsx` calls it client-side. The pasted scan data is
-  never sent to our server. The only two backend routes
-  (`app/api/create-checkout-session`, `app/api/verify-session`) talk to
-  Stripe and never see scan data.
-- **No fixes are ever auto-applied.** The product generates SQL; the user
-  reviews and runs it themselves. Auto-mutating someone's production
-  database is explicitly out of scope for v1 (see the validation plan).
+  function called client-side; the pasted scan data never reaches a server.
+- **No fixes are auto-applied.** The tool generates SQL; you review and run it.
+  Auto-mutating a production database is intentionally out of scope.
 
-## Status
+## Verification
 
-Built 2026-07-04. `npm test` runs 9 unit tests, `npx next build` compiles
-clean. Detection logic verified 2026-07-06 against a real Postgres
-instance (see `verification/README.md`) — this run found and fixed two
-real false-positive bugs that the original fixture-only tests had missed.
+Detection is verified against a real Postgres instance that mirrors Supabase's
+default roles and catalogs (see `verification/README.md`). That run found and
+fixed two real false-positive bugs that the original fixture-only tests had
+missed, which is the whole argument for testing against a real database.
 
-## Before this can take real money
+## Tech
 
-1. ~~Verify detection against a real Supabase project~~ — done 2026-07-06
-   against a disposable local Postgres cluster mirroring Supabase's
-   catalogs (see `verification/README.md` for exactly what that does and
-   doesn't cover). The one still-open piece: a real hosted Supabase
-   project, mainly to check Studio's SQL Editor copy-paste behavior on a
-   large result — smaller risk now, but not zero.
-2. ~~Create a Stripe account and a one-time Price (~$29)~~ — done. No
-   subscription offering at this time — one-time purchase only, to keep
-   the first market test as small as possible. Test in Stripe test mode
-   before switching to live keys.
-3. ~~Deploy (Vercel)~~ — done, connected to the GitHub repo for
-   auto-deploy on push. Pick a name/domain — "RLS Guard" is a placeholder,
-   not a final decision.
-4. Write/approve the actual launch post copy and decide where and when to
-   post (see the validation plan's distribution section) — nothing here
-   should be posted publicly without that review.
+Next.js, TypeScript. Detection logic is a pure, unit-tested function
+(`lib/detect.ts`); the UI is a single client-side page.
 
 ## Local development
 
-```
+```bash
 npm install
-npm test          # unit tests for the detection logic
-npm run dev        # http://localhost:3000
-npm run build       # production build check
+npm test       # unit tests for the detection logic
+npm run dev    # http://localhost:3000
+npm run build  # production build check
 ```
