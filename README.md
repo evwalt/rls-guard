@@ -38,6 +38,15 @@ default roles and catalogs (see `verification/README.md`). That run found and
 fixed two real false-positive bugs that the original fixture-only tests had
 missed, which is the whole argument for testing against a real database.
 
+## Performance
+
+`node --import tsx bench/detect-bench.ts` runs the detector on synthetic
+schemas that repeat the verification mix (RLS off, RLS on with no policies,
+an open policy, an owner-scoped policy, owner-scoped plus a no-op RESTRICTIVE
+policy) and checks every finding against the known answer. On a 2017 dual-core
+Intel i5 laptop it audits 1,000 tables in under 1 ms and 10,000 tables in
+about 5 ms (median of 20 runs), with zero false positives and zero misses.
+
 ## Tech
 
 Next.js, TypeScript. Detection logic is a pure, unit-tested function
