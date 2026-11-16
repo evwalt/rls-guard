@@ -5,7 +5,7 @@
 //   node --import tsx bench/detect-bench.ts
 
 import { performance } from "node:perf_hooks";
-import { detect, type TableScan, type PolicyRow } from "../lib/detect.ts";
+import { detect, type TableScan, type PolicyRow } from "../lib/detect";
 
 const ownerSelect: PolicyRow = {
   policyname: "owner_select", permissive: "PERMISSIVE", roles: ["authenticated"],
